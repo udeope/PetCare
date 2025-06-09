@@ -1,0 +1,26 @@
+[
+  {
+    "id": "user_1",
+    "nombre": "María",
+    "apellido": "González",
+    "email": "maria.gonzalez@email.com",
+    "telefono": "+34 612 345 678",
+    "direccion": "Calle Mayor 123, 28001 Madrid",
+    "fecha_registro": "2023-01-15",
+    "plan": "premium",
+    "limite_mascotas": 10,
+    "avatar": "/images/familia-mascotas.jpg"
+  },
+  {
+    "id": "user_2",
+    "nombre": "Carlos",
+    "apellido": "Rodríguez",
+    "email": "carlos.rodriguez@email.com",
+    "telefono": "+34 623 456 789",
+    "direccion": "Avenida de la Paz 45, 28002 Madrid",
+    "fecha_registro": "2023-08-20",
+    "plan": "gratuito",
+    "limite_mascotas": 3,
+    "avatar": "/images/familia-mascotas.jpg"
+  }
+]

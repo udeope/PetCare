@@ -1,0 +1,58 @@
+[
+  {
+    "id": "1",
+    "id_mascota": "1",
+    "fecha": "2024-07-15",
+    "hora": "10:30",
+    "tipo": "Consulta General",
+    "veterinario": "Dr. Ana Martínez",
+    "clinica": "Clínica Veterinaria Central",
+    "direccion": "Calle Veterinarios 15, 28003 Madrid",
+    "telefono": "+34 915 123 456",
+    "estado": "Programada",
+    "motivo": "Revisión rutinaria semestral",
+    "observaciones": "Traer cartilla de vacunación"
+  },
+  {
+    "id": "2",
+    "id_mascota": "2",
+    "fecha": "2024-08-10",
+    "hora": "16:00",
+    "tipo": "Limpieza Dental",
+    "veterinario": "Dr. Pedro López",
+    "clinica": "Clínica Veterinaria San Antonio",
+    "direccion": "Avenida San Antonio 42, 28004 Madrid",
+    "telefono": "+34 914 567 890",
+    "estado": "Programada",
+    "motivo": "Limpieza dental y revisión bucal",
+    "observaciones": "Ayuno de 12 horas antes del procedimiento"
+  },
+  {
+    "id": "3",
+    "id_mascota": "3",
+    "fecha": "2024-09-01",
+    "hora": "11:15",
+    "tipo": "Consulta General",
+    "veterinario": "Dr. Ana Martínez",
+    "clinica": "Clínica Veterinaria Central",
+    "direccion": "Calle Veterinarios 15, 28003 Madrid",
+    "telefono": "+34 915 123 456",
+    "estado": "Programada",
+    "motivo": "Revisión de crecimiento y evaluación para esterilización",
+    "observaciones": "Consultar sobre esterilización"
+  },
+  {
+    "id": "4",
+    "id_mascota": "1",
+    "fecha": "2024-06-10",
+    "hora": "09:45",
+    "tipo": "Urgencia",
+    "veterinario": "Dr. Carlos Ruiz",
+    "clinica": "Hospital Veterinario 24h",
+    "direccion": "Calle Urgencias 88, 28005 Madrid",
+    "telefono": "+34 912 345 678",
+    "estado": "Completada",
+    "motivo": "Consulta por vómitos",
+    "observaciones": "Resuelto - Cambio de alimentación"
+  }
+]
