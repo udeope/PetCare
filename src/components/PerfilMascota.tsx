@@ -14,7 +14,7 @@ import {
   Edit3,
   FileText,
   Heart,
-  InjectionVial,
+  Syringe,
   PlusCircle,
   Ruler,
   Stethoscope,
@@ -23,13 +23,17 @@ import {
   ShieldCheck,
   Info
 } from 'lucide-react';
+import MedicalVisitList from './MedicalVisitList';
+import VaccinationList from './VaccinationList';
+import AppointmentList from './AppointmentList';
+import { generatePetHistoryPdf } from '../lib/pdfGenerator';
+import { supabase } from '../lib/supabaseClient';
 
 export default function PerfilMascota() {
   const { id: mascotaId } = useParams<{ id: string }>();
   const [mascota, setMascota] = useState<Mascota | null>(null);
   const [historial, setHistorial] = useState<HistorialMedico[]>([]);
   const [vacunas, setVacunas] = useState<Vacuna[]>([]);
-  const [citas, setCitas] = useState<Cita[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,18 +41,16 @@ export default function PerfilMascota() {
       if (!mascotaId) return;
       setLoading(true);
       try {
-        const [mascotaRes, historialRes, vacunasRes, citasRes] = await Promise.all([
+        const [mascotaRes, historialRes, vacunasRes] = await Promise.all([
           fetch('/data/mascotas.json').then(res => res.json()),
           fetch('/data/historial_medico.json').then(res => res.json()),
           fetch('/data/vacunas.json').then(res => res.json()),
-          fetch('/data/citas.json').then(res => res.json()),
         ]);
 
         const currentMascota = mascotaRes.find((m: Mascota) => m.id === mascotaId);
         setMascota(currentMascota);
         setHistorial(historialRes.filter((h: HistorialMedico) => h.id_mascota === mascotaId).sort((a: HistorialMedico, b: HistorialMedico) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()).slice(0, 3)); // Show recent 3, sorted
         setVacunas(vacunasRes.filter((v: Vacuna) => v.id_mascota === mascotaId));
-        setCitas(citasRes.filter((c: Cita) => c.id_mascota === mascotaId && c.estado === 'Programada').sort((a: Cita, b: Cita) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime()).slice(0,3)); // Show upcoming 3, sorted
 
       } catch (error) {
         console.error("Error fetching pet data:", error);
@@ -170,123 +172,42 @@ export default function PerfilMascota() {
           </CardHeader>
           <CardContent className="space-y-3">
             <Button asChild className="w-full justify-start" variant="outline">
-              <Link to={`/historial/${mascotaId}#nueva-entrada`}> 
+              <Link to={`/historial/${mascotaId}#nueva-entrada`}>
                 <Stethoscope className="mr-2 h-4 w-4" /> Registrar Visita Médica
               </Link>
             </Button>
             <Button asChild className="w-full justify-start" variant="outline">
-              <Link to={`/vacunas/${mascotaId}#nueva-vacuna`}> 
-                <InjectionVial className="mr-2 h-4 w-4" /> Añadir Vacuna
+              <Link to={`/vacunas/${mascotaId}#nueva-vacuna`}>
+                <Syringe className="mr-2 h-4 w-4" /> Añadir Vacuna
               </Link>
             </Button>
-            <Button asChild className="w-full justify-start" variant="default">
-              <Link to={`/citas?mascotaId=${mascotaId}`}> 
+            <Button asChild className="w-full justify-start" variant="outline">
+              <Link to={`/citas?mascotaId=${mascotaId}`}>
                 <CalendarDays className="mr-2 h-4 w-4" /> Programar Cita
               </Link>
+            </Button>
+            <Button
+              className="w-full justify-start"
+              variant="default"
+              onClick={async () => {
+                if (mascota) {
+                  const { data: visitas } = await supabase.from('visitas_medicas').select('*').eq('id_mascota', mascota.id);
+                  const { data: vacunas } = await supabase.from('vacunas').select('*').eq('id_mascota', mascota.id);
+                  generatePetHistoryPdf(mascota, visitas || [], vacunas || []);
+                }
+              }}
+            >
+              <FileText className="mr-2 h-4 w-4" /> Exportar a PDF
             </Button>
           </CardContent>
         </Card>
       </div>
 
-      {/* Medical History Summary Card */}
-      <Card className="bg-card text-foreground">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div className="flex items-center">
-            <FileText className="h-6 w-6 mr-3 text-pet-primary" />
-            <CardTitle className="text-xl">Resumen Historial Médico</CardTitle>
-          </div>
-          <Link to={`/historial/${mascotaId}`}>
-            <Button variant="outline" size="sm">Historial Completo</Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {historial.length > 0 ? (
-            <ul className="space-y-3">
-              {historial.map(h => (
-                <li key={h.id} className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex justify-between items-start">
-                    <p className="font-semibold text-foreground">{h.tipo}</p>
-                    <span className="text-xs text-muted-foreground">{new Date(h.fecha).toLocaleDateString('es-ES')}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Veterinario: {h.veterinario}</p>
-                  <p className="text-sm text-foreground mt-1">Diagnóstico: {h.diagnostico}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground py-4 text-center">No hay entradas recientes en el historial médico.</p>
-          )}
-        </CardContent>
-      </Card>
+      {mascotaId && <MedicalVisitList mascotaId={mascotaId} />}
 
-      {/* Vaccines Summary Card */}
-      <Card className="bg-card text-foreground">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div className="flex items-center">
-             <ShieldCheck className="h-6 w-6 mr-3 text-pet-primary" />
-            <CardTitle className="text-xl">Vacunas Relevantes</CardTitle>
-          </div>
-          <Link to={`/vacunas/${mascotaId}`}>
-            <Button variant="outline" size="sm">Todas las Vacunas</Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {upcomingVacunas.length > 0 ? (
-            <ul className="space-y-3">
-              {upcomingVacunas.map(v => (
-                <li key={v.id} className={`p-3 border rounded-lg flex justify-between items-center transition-colors ${v.estado === 'Próximo Vencimiento' ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-900/20' : 'border-border bg-transparent'}`}>
-                  <div>
-                    <p className="font-semibold text-foreground">{v.nombre}</p>
-                    <p className="text-sm text-muted-foreground">Próxima dosis: {new Date(v.proxima_dosis).toLocaleDateString('es-ES')}</p>
-                  </div>
-                  <Badge variant={v.estado === 'Próximo Vencimiento' ? 'default' : 'outline'} className={`${v.estado === 'Próximo Vencimiento' ? 'bg-amber-500 text-amber-foreground' : 'border-green-500 text-green-700 dark:text-green-400'}`}>{v.estado}</Badge>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground py-4 text-center">No hay vacunas próximas o con vencimiento cercano.</p>
-          )}
-           {vencidasCount > 0 && (
-            <div className="mt-4 p-3 border border-destructive/50 bg-destructive/10 rounded-lg">
-                <div className="flex items-center text-destructive">
-                    <AlertTriangle className="h-5 w-5 mr-2" />
-                    <p className="font-semibold">{vencidasCount} vacuna(s) vencida(s).</p>
-                </div>
-            </div>
-            )}
-        </CardContent>
-      </Card>
+      {mascotaId && <VaccinationList mascotaId={mascotaId} />}
 
-      {/* Upcoming Appointments Card */}
-      <Card className="bg-card text-foreground">
-        <CardHeader className="flex flex-row items-center justify-between pb-4">
-          <div className="flex items-center">
-            <CalendarDays className="h-6 w-6 mr-3 text-pet-primary" />
-            <CardTitle className="text-xl">Próximas Citas</CardTitle>
-          </div>
-          <Link to={`/citas?mascotaId=${mascotaId}`}>
-            <Button variant="outline" size="sm">Todas las Citas</Button>
-          </Link>
-        </CardHeader>
-        <CardContent>
-          {citas.length > 0 ? (
-            <ul className="space-y-3">
-              {citas.map(c => (
-                <li key={c.id} className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                 <div className="flex justify-between items-start">
-                    <p className="font-semibold text-foreground">{c.tipo}</p>
-                    <span className="text-xs text-muted-foreground">{new Date(c.fecha).toLocaleDateString('es-ES')} - {c.hora}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Veterinario: {c.veterinario} en {c.clinica}</p>
-                  <p className="text-sm text-foreground mt-1">Motivo: {c.motivo}</p>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-muted-foreground py-4 text-center">No hay citas programadas próximamente.</p>
-          )}
-        </CardContent>
-      </Card>
+      {mascotaId && <AppointmentList mascotaId={mascotaId} />}
     </div>
   );
 }

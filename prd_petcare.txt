@@ -1,0 +1,71 @@
+### **Product Requirements Document (PRD) - PetCare App**
+
+<context>
+# Overview
+PetCare App es una aplicación web diseñada para ayudar a los dueños de mascotas a gestionar de forma centralizada y sencilla toda la información relevante sobre la salud y el cuidado de sus animales. La aplicación resuelve el problema de la dispersión de datos médicos (vacunas, visitas, citas) y facilita un seguimiento proactivo de la salud de las mascotas, aportando tranquilidad y control a sus dueños.
+
+# Core Features
+- **Gestión de Perfiles de Mascotas:** Crear, visualizar y editar perfiles para cada mascota, incluyendo nombre, especie, raza, edad y foto.
+- **Historial Médico Completo:** Registrar y consultar visitas médicas, incluyendo diagnósticos, tratamientos y notas del veterinario.
+- **Control de Vacunación:** Añadir y llevar un registro de todas las vacunas administradas, con sus fechas y próximas dosis.
+- **Gestión de Citas:** Agendar nuevas citas veterinarias y consultar las próximas.
+- **Exportación de Datos:** Generar un informe en PDF con el historial completo de la mascota, fácil de compartir con el veterinario.
+- **Conectividad Backend:** Integración completa con Supabase para almacenar y gestionar todos los datos de forma segura y escalable.
+- **Mejoras de Interfaz de Usuario:**
+    - **Header Fijo:** Un encabezado de navegación que permanece visible en la parte superior para un acceso rápido a las secciones principales.
+    - **Modo Oscuro Mejorado:** Una paleta de colores optimizada para el modo oscuro que mejora la legibilidad y reduce la fatiga visual.
+    - **Botón "Subir al Top":** Un botón que aparece al hacer scroll hacia abajo y permite al usuario volver rápidamente al inicio de la página.
+- **Metadata para SEO y PWA:** Inclusión de metadatos para mejorar el posicionamiento en buscadores y habilitar funcionalidades de Aplicación Web Progresiva (PWA).
+
+# User Experience
+- **User Persona:** El usuario principal es un dueño de mascota (de 25 a 55 años) que es tecnológicamente competente y busca una solución digital para no depender de registros en papel. Valora la conveniencia, la seguridad de los datos y el acceso rápido a la información de salud de su mascota.
+- **Key User Flows:**
+    1.  El usuario se registra/inicia sesión.
+    2.  Añade una nueva mascota a su perfil.
+    3.  Accede al perfil de una mascota y registra una nueva visita médica o vacuna.
+    4.  Agenda una nueva cita desde el dashboard.
+    5.  Exporta el historial médico en PDF antes de una visita al veterinario.
+- **UI/UX Considerations:** La interfaz debe ser limpia, intuitiva y totalmente responsive. La navegación debe ser clara, y las acciones principales (añadir mascota, registrar visita) deben ser fácilmente accesibles.
+</context>
+<PRD>
+# Technical Architecture
+- **Frontend:** Aplicación de una sola página (SPA) desarrollada con React y Vite, utilizando TypeScript para la seguridad de tipos. Los componentes de la interfaz se gestionarán con Shadcn/UI y Tailwind CSS.
+- **Backend (BaaS):** Supabase será utilizado para la base de datos (PostgreSQL), autenticación de usuarios, y APIs autogeneradas.
+- **Data Models:**
+    - `mascotas`: (id, user_id, nombre, especie, raza, fecha_nacimiento, foto_url)
+    - `visitas_medicas`: (id, mascota_id, fecha, motivo, diagnostico, tratamiento, notas)
+    - `vacunas`: (id, mascota_id, nombre_vacuna, fecha_aplicacion, proxima_dosis)
+    - `citas`: (id, mascota_id, fecha, motivo, notas)
+- **APIs and Integrations:** Se utilizará el cliente de JavaScript de Supabase para todas las interacciones con la base de datos. La exportación a PDF se realizará con una librería como `jspdf` en el lado del cliente.
+
+# Development Roadmap
+- **Fase 1: Fundación y MVP Core**
+    1.  Configurar el proyecto de Supabase y definir el esquema de la base de datos.
+    2.  Implementar la conexión entre la app React y Supabase.
+    3.  Desarrollar la funcionalidad completa para **Editar Mascota**.
+    4.  Implementar los formularios y la lógica para **Registrar Visita Médica**.
+    5.  Implementar los formularios y la lógica para **Agregar Vacuna**.
+    6.  Implementar la funcionalidad para agendar una **Nueva Cita**.
+- **Fase 2: Funcionalidades Avanzadas y UI/UX**
+    1.  Desarrollar la funcionalidad de **Exportar a PDF**.
+    2.  Implementar el **Header Fijo**.
+    3.  Añadir el **Botón de "Subir al Top"**.
+    4.  Refinar y **Mejorar el Modo Oscuro**.
+- **Fase 3: Optimización y Despliegue**
+    1.  **Agregar Metadata** para SEO y PWA.
+    2.  Realizar pruebas finales y optimizar el rendimiento.
+
+# Logical Dependency Chain
+1.  **Conexión con Supabase:** Es la base de todo. Sin esto, no se pueden almacenar datos.
+2.  **Editar/Crear Mascota:** Es la entidad principal. Se necesita poder gestionar mascotas antes de poder asociarles historiales.
+3.  **Registrar Visita Médica / Agregar Vacuna / Nueva Cita:** Son las funcionalidades core que dependen de tener una mascota creada. Pueden desarrollarse en paralelo una vez que la gestión de mascotas esté lista.
+4.  **Exportar PDF:** Depende de que existan datos de visitas y vacunas para poder generar un documento útil.
+5.  **Mejoras de UI (Header, Botón Top, Dark Mode):** Son mejoras de experiencia que se pueden aplicar en cualquier momento una vez que la estructura básica de la app esté montada, pero es lógico hacerlas después de que las funcionalidades principales estén en su sitio.
+6.  **Agregar Metadata:** Es un paso final, orientado a la optimización y visibilidad del producto ya funcional.
+
+# Risks and Mitigations
+- **Riesgo Técnico:** La correcta configuración del esquema de base de datos en Supabase y las políticas de seguridad (Row Level Security) es crítica.
+    - **Mitigación:** Dedicar tiempo inicial a diseñar un esquema robusto y realizar pruebas de seguridad antes de implementar las funcionalidades completas.
+- **Riesgo de Alcance (Scope Creep):** Añadir más funcionalidades de las definidas para el MVP puede retrasar la entrega de un producto usable.
+    - **Mitigación:** Adherirse estrictamente al roadmap definido. Las nuevas ideas se añadirán a una lista de "Futuras Mejoras" para ser priorizadas después del lanzamiento del MVP.
+</PRD>

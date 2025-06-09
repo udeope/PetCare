@@ -1,73 +1,69 @@
-export interface Usuario {
-  id: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
-  direccion: string;
-  fecha_registro: string;
-  plan: 'gratuito' | 'premium';
-  limite_mascotas: number;
-  avatar: string;
-}
-
 export interface Mascota {
   id: string;
+  user_id: string;
   nombre: string;
   especie: string;
   raza: string;
-  edad: number;
-  peso: number;
-  color: string;
-  genero: 'Macho' | 'Hembra';
   fecha_nacimiento: string;
-  id_usuario: string;
-  foto: string;
-  estado_salud: string;
-  ultima_visita: string;
-  proxima_cita: string;
-  microchip: string;
-  esterilizado: boolean;
-  observaciones: string;
+  foto?: string;
+  edad?: number;
+  peso?: number;
+  genero?: 'Macho' | 'Hembra';
+  color?: string;
+  estado_salud?: string;
+  microchip?: string;
+  esterilizado?: boolean;
+  ultima_visita?: string;
+  observaciones?: string;
+}
+
+export interface Usuario {
+  id: string;
+  nombre: string;
+  email: string;
+  avatar_url?: string;
+}
+
+export interface VisitaMedica {
+  id: string;
+  mascota_id: string;
+  fecha: string;
+  motivo: string;
+  diagnostico?: string;
+  tratamiento?: string;
+  notas?: string;
 }
 
 export interface HistorialMedico {
-  id: string;
-  id_mascota: string;
-  fecha: string;
-  tipo: string;
-  veterinario: string;
-  diagnostico: string;
-  tratamiento: string;
-  peso: number;
-  temperatura: number;
-  observaciones: string;
-  proxima_cita: string;
+    id: string;
+    id_mascota: string;
+    fecha: string;
+    tipo: string;
+    diagnostico: string;
+    tratamiento: string;
+    veterinario: string;
+    notas: string;
 }
 
 export interface Vacuna {
-  id: string;
-  id_mascota: string;
-  nombre: string;
-  fecha_aplicacion: string;
-  proxima_dosis: string;
-  veterinario: string;
-  lote: string;
-  laboratorio: string;
-  estado: 'Activa' | 'Vencida' | 'Próximo Vencimiento';
+    id: string;
+    id_mascota: string;
+    nombre: string;
+    fecha_aplicacion: string;
+    proxima_dosis: string;
+    lote: string;
+    veterinario: string;
+    estado: 'Vigente' | 'Próximo Vencimiento' | 'Vencida';
 }
 
 export interface Cita {
-  id: string;
-  id_mascota: string;
-  fecha: string;
-  hora: string;
-  tipo: string;
-  veterinario: string;
-  clinica: string;
-  direccion: string;
-  telefono: string;
-  estado: 'Programada' | 'Completada' | 'Cancelada';
-  motivo: string;
-  observaciones: string;
+    id: string;
+    id_mascota: string;
+    fecha: string;
+    hora: string;
+    motivo: string;
+    veterinario: string;
+    clinica: string;
+    estado: 'Programada' | 'Cancelada' | 'Completada';
+    tipo: string;
 }
