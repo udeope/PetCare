@@ -1,36 +1,58 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FileText, Calendar, User, Weight, Thermometer, ArrowLeft, Download } from 'lucide-react';
 import { Mascota, HistorialMedico as HistorialType } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
+// Input, Select, Label might be needed for the next step, not strictly this one
+// import { Input } from "./ui/input";
+// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+// import { Label } from "./ui/label";
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 
 export default function HistorialMedico() {
   const { id } = useParams<{ id: string }>();
   const [mascota, setMascota] = useState<Mascota | null>(null);
-  const [historial, setHistorial] = useState<HistorialType[]>([]);
+  const [historial, setHistorial] = useState<HistorialType[]>([]); // Full unfiltered list
+
+  // NEW: State for filters
+  const [searchTerm, setSearchTerm] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [selectedTipo, setSelectedTipo] = useState<string>(''); // '' or 'all' for no filter
+  const [selectedVeterinario, setSelectedVeterinario] = useState<string>(''); // '' or 'all' for no filter
+
+  const [filteredHistorial, setFilteredHistorial] = useState<HistorialType[]>([]);
+
+  // NEW: State for select options
+  const [uniqueTipos, setUniqueTipos] = useState<string[]>([]);
+  const [uniqueVeterinarios, setUniqueVeterinarios] = useState<string[]>([]);
 
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Cargar datos de la mascota
         const mascotasResponse = await fetch('/data/mascotas.json');
-        const mascotas = await mascotasResponse.json();
-        const mascotaEncontrada = mascotas.find((m: Mascota) => m.id === id);
+        const mascotasData = await mascotasResponse.json();
+        const mascotaEncontrada = mascotasData.find((m: Mascota) => m.id === id);
         setMascota(mascotaEncontrada);
 
-        // Cargar historial médico
         const historialResponse = await fetch('/data/historial_medico.json');
-        const historialData = await historialResponse.json();
-        const historialFiltrado = historialData.filter((h: HistorialType) => h.id_mascota === id);
+        const allHistorialData = await historialResponse.json();
+        const petHistorial = allHistorialData.filter((h: HistorialType) => h.id_mascota === id);
         
-        // Ordenar por fecha descendente
-        historialFiltrado.sort((a: HistorialType, b: HistorialType) => 
+        petHistorial.sort((a: HistorialType, b: HistorialType) =>
           new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
         );
         
-        setHistorial(historialFiltrado);
+        setHistorial(petHistorial); // Set the full history
+
+        // Populate unique options for filters
+        const tipos = new Set(petHistorial.map(h => h.tipo));
+        setUniqueTipos(['', ...Array.from(tipos)]); // Add '' for "All types"
+
+        const veterinarios = new Set(petHistorial.map(h => h.veterinario).filter(Boolean)); // Filter out undefined/null vets
+        setUniqueVeterinarios(['', ...Array.from(veterinarios as string[])]); // Add '' for "All vets"
+
       } catch (error) {
         console.error('Error cargando historial médico:', error);
       }
@@ -40,6 +62,57 @@ export default function HistorialMedico() {
       loadData();
     }
   }, [id]);
+
+  // NEW: Effect for filtering
+  useEffect(() => {
+    let currentFiltered = [...historial];
+
+    // Search term filter (checking a few key fields)
+    if (searchTerm) {
+      currentFiltered = currentFiltered.filter(item => {
+        const term = searchTerm.toLowerCase();
+        return (
+          item.diagnostico?.toLowerCase().includes(term) ||
+          item.tratamiento?.toLowerCase().includes(term) ||
+          item.observaciones?.toLowerCase().includes(term) ||
+          item.tipo?.toLowerCase().includes(term) ||
+          item.veterinario?.toLowerCase().includes(term)
+        );
+      });
+    }
+
+    // Date range filter
+    if (startDate) {
+      currentFiltered = currentFiltered.filter(item => {
+        try {
+          return new Date(item.fecha) >= new Date(startDate);
+        } catch (e) { return true; } // Ignore invalid item.fecha
+      });
+    }
+    if (endDate) {
+      currentFiltered = currentFiltered.filter(item => {
+        try {
+          // Add 1 day to endDate to make it inclusive of the selected end day
+          const inclusiveEndDate = new Date(endDate);
+          inclusiveEndDate.setDate(inclusiveEndDate.getDate() + 1);
+          return new Date(item.fecha) < inclusiveEndDate;
+        } catch (e) { return true; }
+      });
+    }
+
+    // Selected type filter
+    if (selectedTipo && selectedTipo !== '') { // Check for '' explicitly
+      currentFiltered = currentFiltered.filter(item => item.tipo === selectedTipo);
+    }
+
+    // Selected veterinarian filter
+    if (selectedVeterinario && selectedVeterinario !== '') { // Check for '' explicitly
+      currentFiltered = currentFiltered.filter(item => item.veterinario === selectedVeterinario);
+    }
+
+    setFilteredHistorial(currentFiltered);
+  }, [historial, searchTerm, startDate, endDate, selectedTipo, selectedVeterinario]);
+
 
   const getTipoColor = (tipo: string) => {
     switch (tipo.toLowerCase()) {
@@ -112,26 +185,37 @@ export default function HistorialMedico() {
         </CardContent>
       </Card>
 
-      {/* Timeline del historial */}
+      {/* HERE WILL BE THE FILTER CARD - TO BE ADDED IN NEXT STEP */}
+      {/* For now, this subtask only prepares the logic. */}
+      {/* Example of how states would be used by filter controls (conceptual for this step):
+      <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+      ...etc. for other filters
+      */}
+
+      {/* Timeline del historial - USES filteredHistorial NOW */}
       <div className="space-y-6">
-        {historial.length === 0 ? (
+        {filteredHistorial.length === 0 ? ( // Check filteredHistorial
           <Card>
             <CardContent className="text-center py-12">
               <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-600 mb-2">
-                No hay registros médicos
+                {historial.length > 0 ? 'No hay registros que coincidan con los filtros' : 'No hay registros médicos'}
               </h3>
               <p className="text-gray-500 mb-4">
-                El historial médico de {mascota.nombre} está vacío
+                {historial.length > 0 ? 'Intenta ajustar los filtros o revisa el historial completo.' : `El historial médico de ${mascota.nombre} está vacío`}
               </p>
-              <Button>Agregar Primera Consulta</Button>
+              {historial.length === 0 && <Button>Agregar Primera Consulta</Button>}
             </CardContent>
           </Card>
         ) : (
-          historial.map((registro, index) => (
+          // Make sure this map uses filteredHistorial
+          filteredHistorial.map((registro, index) => (
             <Card key={registro.id} className="relative">
-              {/* Línea de tiempo */}
-              {index < historial.length - 1 && (
+              {/* Línea de tiempo - logic might need adjustment if list is filtered */}
+              {/* This visual line might be less relevant if items are non-contiguous due to filtering. */}
+              {/* For now, keep it, but it might need to be re-evaluated. */}
+              {index < filteredHistorial.length - 1 && (
                 <div className="absolute left-8 top-16 bottom-0 w-0.5 bg-gray-200" />
               )}
               

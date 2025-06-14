@@ -5,6 +5,7 @@ import { Mascota, Usuario, Cita, Vacuna } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import RemindersList from './RemindersList';
 
 interface DashboardProps {
   mascotas: Mascota[];
