@@ -1,38 +1,13 @@
-import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, Heart, Shield, Stethoscope, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
-import { Mascota, Usuario, Cita, Vacuna } from '../types';
+import { Calendar, Heart, Shield, Stethoscope, Plus, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import RemindersList from './RemindersList';
+import { usePetCare } from '../context/PetCareContext';
+import { formatearFecha } from '../lib/petUtils';
 
-interface DashboardProps {
-  mascotas: Mascota[];
-  user: Usuario | null;
-}
-
-export default function Dashboard({ mascotas, user }: DashboardProps) {
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [vacunas, setVacunas] = useState<Vacuna[]>([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const citasResponse = await fetch('/data/citas.json');
-        const citasData = await citasResponse.json();
-        setCitas(citasData);
-
-        const vacunasResponse = await fetch('/data/vacunas.json');
-        const vacunasData = await vacunasResponse.json();
-        setVacunas(vacunasData);
-      } catch (error) {
-        console.error('Error cargando datos:', error);
-      }
-    };
-
-    loadData();
-  }, []);
+export default function Dashboard() {
+  const { mascotas, usuario: user, citas, vacunas, getMascotaById } = usePetCare();
 
   const proximasCitas = citas
     .filter(cita => cita.estado === 'Programada')
@@ -43,8 +18,6 @@ export default function Dashboard({ mascotas, user }: DashboardProps) {
   const vacunasVenciendo = vacunas
     .filter(vacuna => vacuna.estado === 'Próximo Vencimiento')
     .filter(vacuna => mascotas.some(mascota => mascota.id === vacuna.id_mascota));
-
-  const getMascotaById = (id: string) => mascotas.find(m => m.id === id);
 
   return (
     <div className="space-y-6">
@@ -168,7 +141,7 @@ export default function Dashboard({ mascotas, user }: DashboardProps) {
                     {mascota.especie} • {mascota.raza} • {mascota.edad} años
                   </p>
                   <p className="text-xs text-gray-500">
-                    Última visita: {new Date(mascota.ultima_visita).toLocaleDateString('es-ES')}
+                    Última visita: {formatearFecha(mascota.ultima_visita)}
                   </p>
                 </div>
               </Link>

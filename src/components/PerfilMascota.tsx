@@ -14,7 +14,7 @@ import {
   Edit3,
   FileText,
   Heart,
-  InjectionVial,
+  Syringe,
   PlusCircle,
   Ruler,
   Stethoscope,
@@ -176,7 +176,7 @@ export default function PerfilMascota() {
             </Button>
             <Button asChild className="w-full justify-start" variant="outline">
               <Link to={`/vacunas/${mascotaId}#nueva-vacuna`}> 
-                <InjectionVial className="mr-2 h-4 w-4" /> Añadir Vacuna
+                <Syringe className="mr-2 h-4 w-4" /> Añadir Vacuna
               </Link>
             </Button>
             <Button asChild className="w-full justify-start" variant="default">

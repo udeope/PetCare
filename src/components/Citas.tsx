@@ -1,52 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { Calendar, Clock, MapPin, Phone, Plus, User, CheckCircle, X, AlertCircle } from 'lucide-react';
-import { Cita, Mascota } from '../types';
+import { Cita } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { usePetCare } from '../context/PetCareContext';
+import { getEstadoCitaColor, formatearFechaCompleta, esHoy, fechaPasada } from '../lib/petUtils';
 
 export default function Citas() {
-  const [citas, setCitas] = useState<Cita[]>([]);
-  const [mascotas, setMascotas] = useState<Mascota[]>([]);
+  const { citas: allCitas, getMascotaById } = usePetCare();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        // Cargar citas
-        const citasResponse = await fetch('/data/citas.json');
-        const citasData = await citasResponse.json();
-        
-        // Ordenar por fecha
-        citasData.sort((a: Cita, b: Cita) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
-        setCitas(citasData);
-
-        // Cargar mascotas
-        const mascotasResponse = await fetch('/data/mascotas.json');
-        const mascotasData = await mascotasResponse.json();
-        setMascotas(mascotasData);
-      } catch (error) {
-        console.error('Error cargando citas:', error);
-      }
-    };
-
-    loadData();
-  }, []);
-
-  const getMascotaById = (id: string) => mascotas.find(m => m.id === id);
-
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'Programada':
-        return 'bg-blue-100 text-blue-800';
-      case 'Completada':
-        return 'bg-green-100 text-green-800';
-      case 'Cancelada':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const citas = useMemo(() => {
+    return [...allCitas].sort((a, b) =>
+      new Date(a.fecha).getTime() - new Date(b.fecha).getTime()
+    );
+  }, [allCitas]);
 
   const getEstadoIcon = (estado: string) => {
     switch (estado) {
@@ -65,9 +34,8 @@ export default function Citas() {
   const citasCompletadas = citas.filter(c => c.estado === 'Completada');
   const citasCanceladas = citas.filter(c => c.estado === 'Cancelada');
 
-  const hoy = new Date();
-  const proximasCitas = citasProgramadas.filter(c => new Date(c.fecha) >= hoy);
-  const citasVencidas = citasProgramadas.filter(c => new Date(c.fecha) < hoy);
+  const proximasCitas = citasProgramadas.filter(c => !fechaPasada(c.fecha));
+  const citasVencidas = citasProgramadas.filter(c => fechaPasada(c.fecha));
 
   const CitaCard = ({ cita }: { cita: Cita }) => {
     const mascota = getMascotaById(cita.id_mascota);
@@ -91,12 +59,7 @@ export default function Citas() {
                 <CardDescription className="flex items-center space-x-4">
                   <span className="flex items-center">
                     <Calendar className="mr-1 h-4 w-4" />
-                    {new Date(cita.fecha).toLocaleDateString('es-ES', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    })}
+                    {formatearFechaCompleta(cita.fecha)}
                   </span>
                   <span className="flex items-center">
                     <Clock className="mr-1 h-4 w-4" />
@@ -106,7 +69,7 @@ export default function Citas() {
               </div>
             </div>
             
-            <Badge className={getEstadoColor(cita.estado)}>
+            <Badge className={getEstadoCitaColor(cita.estado)}>
               <span className="flex items-center">
                 {getEstadoIcon(cita.estado)}
                 <span className="ml-1">{cita.estado}</span>
@@ -235,11 +198,7 @@ export default function Citas() {
       </div>
 
       {/* Citas por vencer hoy */}
-      {proximasCitas.filter(c => {
-        const fechaCita = new Date(c.fecha);
-        const hoy = new Date();
-        return fechaCita.toDateString() === hoy.toDateString();
-      }).length > 0 && (
+      {proximasCitas.filter(c => esHoy(c.fecha)).length > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardHeader>
             <CardTitle className="flex items-center text-blue-800">
@@ -253,11 +212,7 @@ export default function Citas() {
           <CardContent>
             <div className="space-y-3">
               {proximasCitas
-                .filter(c => {
-                  const fechaCita = new Date(c.fecha);
-                  const hoy = new Date();
-                  return fechaCita.toDateString() === hoy.toDateString();
-                })
+                .filter(c => esHoy(c.fecha))
                 .map((cita) => {
                   const mascota = getMascotaById(cita.id_mascota);
                   return (
