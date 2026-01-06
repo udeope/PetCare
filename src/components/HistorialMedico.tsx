@@ -1,67 +1,39 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { FileText, Calendar, User, Weight, Thermometer, ArrowLeft, Download } from 'lucide-react';
-import { Mascota, HistorialMedico as HistorialType } from '../types';
+import { HistorialMedico as HistorialType } from '../types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-// Input, Select, Label might be needed for the next step, not strictly this one
-// import { Input } from "./ui/input";
-// import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-// import { Label } from "./ui/label";
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
+import { usePetCare } from '../context/PetCareContext';
+import { getTipoHistorialColor, formatearFechaCompleta, formatearFecha } from '../lib/petUtils';
+import ErrorState from './ErrorState';
+import LoadingState from './LoadingState';
 
 export default function HistorialMedico() {
   const { id } = useParams<{ id: string }>();
-  const [mascota, setMascota] = useState<Mascota | null>(null);
-  const [historial, setHistorial] = useState<HistorialType[]>([]); // Full unfiltered list
+  const { getMascotaById, getHistorialByMascota, loading, error, refetch } = usePetCare();
 
-  // NEW: State for filters
+  const mascota = id ? getMascotaById(id) : undefined;
+  const historialCompleto = id ? getHistorialByMascota(id) : [];
+
+  // Ordenar historial por fecha descendente
+  const historial = [...historialCompleto].sort(
+    (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+  );
+
+  // State for filters
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
-  const [selectedTipo, setSelectedTipo] = useState<string>(''); // '' or 'all' for no filter
-  const [selectedVeterinario, setSelectedVeterinario] = useState<string>(''); // '' or 'all' for no filter
+  const [selectedTipo, setSelectedTipo] = useState<string>('');
+  const [selectedVeterinario, setSelectedVeterinario] = useState<string>('');
 
   const [filteredHistorial, setFilteredHistorial] = useState<HistorialType[]>([]);
 
-  // NEW: State for select options
-  const [uniqueTipos, setUniqueTipos] = useState<string[]>([]);
-  const [uniqueVeterinarios, setUniqueVeterinarios] = useState<string[]>([]);
-
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const mascotasResponse = await fetch('/data/mascotas.json');
-        const mascotasData = await mascotasResponse.json();
-        const mascotaEncontrada = mascotasData.find((m: Mascota) => m.id === id);
-        setMascota(mascotaEncontrada);
-
-        const historialResponse = await fetch('/data/historial_medico.json');
-        const allHistorialData = await historialResponse.json();
-        const petHistorial = allHistorialData.filter((h: HistorialType) => h.id_mascota === id);
-        
-        petHistorial.sort((a: HistorialType, b: HistorialType) =>
-          new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
-        );
-        
-        setHistorial(petHistorial); // Set the full history
-
-        // Populate unique options for filters
-        const tipos = new Set(petHistorial.map(h => h.tipo));
-        setUniqueTipos(['', ...Array.from(tipos)]); // Add '' for "All types"
-
-        const veterinarios = new Set(petHistorial.map(h => h.veterinario).filter(Boolean)); // Filter out undefined/null vets
-        setUniqueVeterinarios(['', ...Array.from(veterinarios as string[])]); // Add '' for "All vets"
-
-      } catch (error) {
-        console.error('Error cargando historial médico:', error);
-      }
-    };
-
-    if (id) {
-      loadData();
-    }
-  }, [id]);
+  // Unique options for filters
+  const uniqueTipos = ['', ...Array.from(new Set(historial.map(h => h.tipo)))];
+  const uniqueVeterinarios = ['', ...Array.from(new Set(historial.map(h => h.veterinario).filter(Boolean) as string[]))];
 
   // NEW: Effect for filtering
   useEffect(() => {
@@ -114,29 +86,20 @@ export default function HistorialMedico() {
   }, [historial, searchTerm, startDate, endDate, selectedTipo, selectedVeterinario]);
 
 
-  const getTipoColor = (tipo: string) => {
-    switch (tipo.toLowerCase()) {
-      case 'consulta general':
-        return 'bg-blue-100 text-blue-800';
-      case 'vacunación':
-        return 'bg-green-100 text-green-800';
-      case 'urgencia':
-        return 'bg-red-100 text-red-800';
-      case 'cirugía':
-        return 'bg-purple-100 text-purple-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
+  if (loading) {
+    return <LoadingState message="Cargando historial médico..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={refetch} />;
+  }
 
   if (!mascota) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Cargando historial médico...</p>
-        </div>
-      </div>
+      <ErrorState
+        title="Mascota no encontrada"
+        message="No se encontró la mascota solicitada"
+      />
     );
   }
 
@@ -230,12 +193,7 @@ export default function HistorialMedico() {
                       <CardDescription className="flex items-center space-x-4">
                         <span className="flex items-center">
                           <Calendar className="mr-1 h-4 w-4" />
-                          {new Date(registro.fecha).toLocaleDateString('es-ES', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
+                          {formatearFechaCompleta(registro.fecha)}
                         </span>
                         <span className="flex items-center">
                           <User className="mr-1 h-4 w-4" />
@@ -245,7 +203,7 @@ export default function HistorialMedico() {
                     </div>
                   </div>
                   
-                  <Badge className={getTipoColor(registro.tipo)}>
+                  <Badge className={getTipoHistorialColor(registro.tipo)}>
                     {registro.tipo}
                   </Badge>
                 </div>
@@ -286,7 +244,7 @@ export default function HistorialMedico() {
                       <span className="text-sm text-gray-500">Próxima Cita</span>
                     </div>
                     <p className="font-semibold text-pet-secondary">
-                      {new Date(registro.proxima_cita).toLocaleDateString('es-ES')}
+                      {formatearFecha(registro.proxima_cita)}
                     </p>
                   </div>
                 </div>
